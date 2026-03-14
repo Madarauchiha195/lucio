@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+:root {
+  --bg-primary: #0a0b0f;
+  --bg-secondary: #111318;
+  --bg-card: #161920;
+  --bg-hover: #1c2030;
+  --border: #1e2235;
+  --border-active: #3d4a7a;
+  --accent: #5b6ef5;
+  --accent-glow: rgba(91, 110, 245, 0.15);
+  --accent-light: #7b8ff8;
+  --gold: #f0a84c;
+  --text-primary: #e8eaf0;
+  --text-secondary: #7a8099;
+  --text-muted: #4a5068;
+  --success: #34d399;
+  --error: #f87171;
+  --warning: #fbbf24;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: "Inter", system-ui, sans-serif;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-active);
+}
+
+/* Glass card */
+.glass {
+  background: rgba(22, 25, 32, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Pulse dot */
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+
+.pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* Fade in */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease forwards;
+}
+
+/* Glow border on focus */
+.glow-focus:focus-within {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+/* Typing cursor */
+@keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+.typing-cursor::after {
+  content: "▋";
+  opacity: 1;
+  animation: blink 0.8s ease-in-out infinite;
+  color: var(--accent);
+  margin-left: 2px;
+}
+
+/* Spin for loaders */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
