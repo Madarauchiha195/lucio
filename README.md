@@ -1,89 +1,127 @@
-# Lucio Studio – Legal Document QA
+# Lucio Studio — Advanced Legal Document QA
 
-A high-performance Document QA system built with Python (FastAPI), React (Next.js 14), BM25 keyword search, FAISS vector search, and OpenAI GPT-4.
-
-This project allows you to drag-and-drop your own legal documents (PDF, DOCX, TXT, HTML) and instantly chat with them. The AI will provide answers with **precise citations** pointing to the exact document and page number where it found the information.
+A production-grade, hybrid retrieval system for legal document analysis featuring BM25 + dense vector search, cross-encoder reranking, async LLM answering, and a legal document graph.
 
 ---
 
-## 🚀 Getting Started
+## 🗂 Project Structure
 
-### 1. Requirements
-* Python 3.10+
-* Node.js 18+
-* An OpenAI API Key
+```
+lucio/
+├── ingestion/          # File detection + per-format extractors (PDF/DOCX/HTML/CSV with OCR)
+├── processing/         # Dual chunker: page_chunker + token_chunker (tiktoken)
+├── indexing/           # BM25 (boolean+proximity) + FAISS vector index + hybrid RRF retriever
+├── reranker/           # Cross-encoder reranker (ms-marco-MiniLM)
+├── qa/                 # LLM client adapters (Gemini/OpenAI/Local) + batch async answering
+├── evidence_mapper/    # networkx document graph with citation extraction
+├── ui_utils/           # Boolean/proximity/clause/citation search tools
+├── performance/        # Benchmark harness with bottleneck analysis
+├── tests/              # pytest unit + integration tests
+├── api/                # FastAPI web API + Next.js Studio frontend
+├── studio/             # Next.js 14 frontend
+├── run_challenge.py    # ⭐ Single entry-point for Lucio Challenge
+├── config.py           # All configuration flags
+└── documents/          # Place your docs here (PDF, DOCX, TXT, CSV, HTML)
+```
 
-### 2. Setup the Backend (FastAPI)
-Open a terminal and run the following commands:
+---
+
+## 🚀 Quick Start (Local)
+
+### 1. Prerequisites
+- Python 3.10+
+- Node.js 18+ (for Studio frontend)
+- CUDA toolkit (optional, for GPU speedup)
+
+### 2. Install Dependencies
 ```bash
-# Navigate to the project folder
 cd d:\lucio
-
-# (Optional but recommended) Create a virtual environment
 python -m venv venv
 .\venv\Scripts\activate
-
-# Install Python dependencies
 pip install -r requirements.txt
-pip install fastapi uvicorn[standard] python-multipart sse-starlette
-
-# Set your API Key
-copy .env.example .env
+pip install tiktoken networkx sentence-transformers chromadb python-magic-bin google-genai openpyxl
 ```
-👉 **IMPORTANT:** Open the `.env` file in a text editor and paste your OpenAI API key (`OPENAI_API_KEY=sk-...`). Without this, the AI cannot generate answers.
 
-### 3. Setup the Frontend (Next.js Studio)
-Open a **second** terminal and run:
+### 3. Configure API Keys & Settings
+Edit `d:\lucio\.env`:
+```env
+GEMINI_API_KEY=your-gemini-key
+
+# Optional toggles
+USE_OPENAI_API=false
+OPENAI_API_KEY=sk-...
+LLM_MODEL=gemini-2.5-flash
+EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+GPU_DEVICE=cpu       # or: cuda  mps
+BM25_TOPK=30
+ANN_TOPK=30
+RERANKER_TOPK=10
+RUNTIME_LIMIT_SECONDS=30
+```
+
+### 4. Add Your Documents
+Place all PDFs, DOCX, TXT, CSV, or HTML files in `d:\lucio\documents\`.
+
+### 5. Run the Challenge Pipeline
 ```bash
-cd d:\lucio\studio
-npm install
+python run_challenge.py --force
 ```
+
+| Flag | Effect |
+|---|---|
+| `--force` | Rebuild index even if cached |
+| `--strategy page` | Use page chunker instead of token |
+| `--questions path.xlsx` | Custom question file |
+| `--benchmark` | Print per-stage timing breakdown |
+| `--download` | Run corpus downloader first |
+| `--verbose` | DEBUG logging |
 
 ---
 
-## 🏃‍♂️ How to Run the App
-Whenever you want to use the app, you need to run **both** servers.
+## 🌐 Running the Web Studio
 
-### Terminal 1 - Start the Backend API
+**Terminal 1 — Backend:**
 ```bash
-cd d:\lucio
-# If using a virtual env, activate it first: .\venv\Scripts\activate
 python -m uvicorn api.main:app --port 8000 --reload
 ```
 
-### Terminal 2 - Start the Frontend UI
+**Terminal 2 — Frontend:**
 ```bash
-cd d:\lucio\studio
+cd studio
+npm install
 npm run dev
 ```
-
-Finally, open your browser and go to: **[http://localhost:3000](http://localhost:3000)**
-
----
-
-## 📂 Adding Your Own Documents
-
-It is very easy to use your own files!
-
-1. Open the `d:\lucio\documents\` folder.
-2. Delete the sample files.
-3. Paste in your own PDFs, Word documents (`.docx`), text files (`.txt`), or HTML files.
-4. Go to the web app frontend (`http://localhost:3000`).
-5. Click the **"Build Index"** button in the left sidebar.
-
-The system will now ingest all your documents in parallel. You will see the live progress log, and once finished, it will display exactly **how many seconds** it took to process your files. 
-
-After it says "Ready", you can start asking questions!
+Open **http://localhost:3000**
 
 ---
 
-## 🏗 Architecture & Technologies
+## 🧪 Running Tests
 
-* **Ingestion:** `PyMuPDF` (PDFs), `python-docx` (Word). Runs on 6 parallel workers.
-* **Chunking:** Sentence-aware sliding window (~1000 chars, 20% overlap).
-* **Hybrid Search:** `rank_bm25` (Keyword) + `faiss-cpu` (Semantic Vector).
-* **Reranking:** Reciprocal Rank Fusion (RRF) combines both search scores.
-* **LLM Engine:** OpenAI `gpt-4o` with strict citation prompting.
-* **Backend Framework:** FastAPI with Server-Sent Events (SSE) streaming.
-* **Frontend UI:** Next.js 14 App Router, React, Tailwind CSS. Dark theme glassmorphism.
-* **Caching:** Embeddings and indexes are cached to disk so you only pay the embedding cost once per document.
+```bash
+pytest tests/ -v
+```
+
+Test coverage:
+- `test_extractor.py` — TXT, HTML, CSV parsers
+- `test_bm25.py` — basic search, boolean AND/NOT, proximity search
+- `test_integration.py` — 200-doc simulation, schema validation, runtime check
+
+---
+
+## ⚙️ LLM Toggle (Gemini vs OpenAI vs Local)
+
+| Mode | .env setting |
+|---|---|
+| **Gemini** (default) | `GEMINI_API_KEY=...` |
+| **OpenAI** | `USE_OPENAI_API=true` + `OPENAI_API_KEY=...` + `LLM_MODEL=gpt-4o` |
+| **Local LLM** | Install `llama-cpp-python`, set `LOCAL_MODEL_PATH=/path/to/mistral.gguf` |
+
+---
+
+## ☁️ Running on Google Colab
+
+See `COLAB_GUIDE.md` or upload `lucio_colab.ipynb` directly to Colab.
+
+## 🖥️ Running on a Rented GPU
+
+See `OPS_GUIDE.md` for step-by-step instructions to rent A10G / RTX3090 and run the pipeline at full speed.
