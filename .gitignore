@@ -1,0 +1,24 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.env
+
+# Lucio specific ignores
+cache/
+output/
+submit.log
+build_log.txt
+lucio_submission.json
+lucio_colab.ipynb
+COLAB_GUIDE.md
+OPS_GUIDE.md
+
+# OS generated files
+.DS_Store
+Thumbs.db
