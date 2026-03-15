@@ -120,15 +120,24 @@ async def query_stream(req: QueryRequest):
 @router.post("/query/batch")
 async def query_batch():
     """Answer all 15 fixed questions (non-streaming, returns JSON)."""
-    from questions import QUESTIONS
     from pipeline import run_questions
+
+    import pandas as pd
+    from pathlib import Path
+    
+    excel_path = Path("d:/lucio/documents/Testing Set Questions.xlsx")
+    if not excel_path.exists():
+        raise HTTPException(status_code=404, detail="Testing Set Questions.xlsx not found")
+        
+    df = pd.read_excel(excel_path)
+    questions = df['Question'].dropna().tolist()
 
     loop = asyncio.get_event_loop()
     result_queue: asyncio.Queue = asyncio.Queue()
 
     def _run():
         try:
-            results = run_questions(QUESTIONS)
+            results = run_questions(questions)
             loop.call_soon_threadsafe(result_queue.put_nowait, results)
         except Exception as exc:
             loop.call_soon_threadsafe(result_queue.put_nowait, exc)

@@ -83,8 +83,14 @@ def main() -> int:
         if args.q:
             questions = [args.q]
         else:
-            from questions import QUESTIONS
-            questions = QUESTIONS
+            import pandas as pd
+            from pathlib import Path
+            excel_path = Path("d:/lucio/documents/Testing Set Questions.xlsx")
+            if not excel_path.exists():
+                logger.error(f"Error: {excel_path} not found.")
+                return 1
+            df = pd.read_excel(excel_path)
+            questions = df['Question'].dropna().tolist()
 
         logger.info("Starting query phase (%d question(s)) ...", len(questions))
         run_questions(questions)

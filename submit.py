@@ -6,7 +6,6 @@ import httpx
 import json
 import logging
 from pipeline import build_index, run_questions
-from questions import QUESTIONS
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,11 +15,24 @@ SUBMISSION_URL = "https://example-lucio-challenge-server.com/api/submit"
 def main():
     logger.info("Starting Lucio Challenge Execution...")
     
+    # Read questions from Excel
+    import pandas as pd
+    from pathlib import Path
+    
+    excel_path = Path("d:/lucio/documents/Testing Set Questions.xlsx")
+    if not excel_path.exists():
+        logger.error(f"Could not find questions file: {excel_path}")
+        return
+        
+    df = pd.read_excel(excel_path)
+    questions = df['Question'].dropna().tolist()
+    logger.info(f"Loaded {len(questions)} questions from {excel_path.name}")
+    
     # 1. Build index (will read all files in documents/)
     build_index(force=True)
     
-    # 2. Run the 15 fixed questions
-    results = run_questions(QUESTIONS)
+    # 2. Run the dynamic questions
+    results = run_questions(questions)
     
     # 3. Format as specific challenge JSON output
     submission_data = [r.to_dict() for r in results if r]
